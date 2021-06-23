@@ -89,6 +89,29 @@ mod naive_impl {
         return v;
     }
 
+    fn shift_board_left(v: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+        let mut vec = <Vec<Vec<i32>>>::with_capacity(v.len());
+        for i in v {
+            vec.push(shift_row_left(i));
+        }
+        return vec;
+    }
+
+    fn shift_board_right(v: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+        let mut vec = v.clone();
+        reverse_rows(&mut vec);
+
+        let mut shifted = shift_board_left(&vec);
+        reverse_rows(&mut shifted);
+        return shifted;
+    }
+
+    fn reverse_rows(v: &mut Vec<Vec<i32>>) {
+        for i in v {
+            i.reverse();
+        }
+    }
+
     fn shift_row_left(v: &Vec<i32>) -> Vec<i32> {
         let mut vec = compactify_row(v);
         return combine_paired_cells_in_row(&mut vec);
@@ -135,6 +158,58 @@ mod naive_impl {
             }
         }
         return vec;
+    }
+
+    #[test]
+    fn test_shift_board_left() {
+        let v1 = vec![
+            vec![2, 0, 2, 0],
+            vec![0, 4, 4, 2],
+            vec![2, 2, 2, 2],
+            vec![2, 4, 2, 4],
+        ];
+        let expected = vec![
+            vec![4, 0, 0, 0],
+            vec![8, 2, 0, 0],
+            vec![4, 4, 0, 0],
+            vec![2, 4, 2, 4],
+        ];
+        assert_eq!(shift_board_left(&v1), expected);
+    }
+
+    #[test]
+    fn test_shift_board_right() {
+        let v1 = vec![
+            vec![2, 0, 2, 0],
+            vec![0, 4, 4, 2],
+            vec![2, 2, 2, 2],
+            vec![2, 4, 2, 4],
+        ];
+        let expected = vec![
+            vec![0, 0, 0, 4],
+            vec![0, 0, 8, 2],
+            vec![0, 0, 4, 4],
+            vec![2, 4, 2, 4],
+        ];
+        assert_eq!(shift_board_right(&v1), expected);
+    }
+
+    #[test]
+    fn test_reverse_rows() {
+        let mut v1 = vec![
+            vec![2, 0, 2, 0],
+            vec![0, 4, 4, 2],
+            vec![2, 2, 2, 2],
+            vec![2, 4, 2, 4],
+        ];
+        let expected = vec![
+            vec![0, 2, 0, 2],
+            vec![2, 4, 4, 0],
+            vec![2, 2, 2, 2],
+            vec![4, 2, 4, 2],
+        ];
+        reverse_rows(&mut v1);
+        assert_eq!(v1, expected);
     }
 
     #[test]
