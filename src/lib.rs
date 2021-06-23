@@ -56,37 +56,13 @@ mod naive_impl {
         Down,
     }
 
-    fn shift(board: &Vec<Vec<i32>>, direction: Direction) -> Vec<Vec<i32>> {
-        let mut v = board.clone();
-
-        match direction {
-            Direction::Down => {
-                println!("Down");
-            }
-            Direction::Up => println!("Up"),
-            Direction::Left => {
-                println!("Left");
-                for i in 0..v.len() {
-                    for j in 1..v[i].len() {
-                        if v[i][j] == 0 {
-                            v[i][j] = v[i][j + 1];
-                            v[i][j + 1] = 0;
-                        }
-                    }
-                    for j in 1..v[i].len() {
-                        if v[i][j] == 0 {
-                            break;
-                        }
-                        if v[i][j] == v[i][j + 1] {
-                            v[i][j] += v[i][j + 1];
-                            v[i][j + 1] = 0;
-                        }
-                    }
-                }
-            }
-            Direction::Right => println!("Right"),
-        }
-        return v;
+    fn shift_board(board: &Vec<Vec<i32>>, direction: Direction) -> Vec<Vec<i32>> {
+        return match direction {
+            Direction::Left => shift_board_left(&board),
+            Direction::Right => shift_board_right(&board),
+            Direction::Up => shift_board_up(&board),
+            Direction::Down => shift_board_down(&board),
+        };
     }
 
     fn shift_board_left(v: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
@@ -166,6 +142,48 @@ mod naive_impl {
             }
         }
         return vec;
+    }
+
+    #[test]
+    fn test_shift_board() {
+        let v1 = vec![
+            vec![2, 0, 2, 0],
+            vec![0, 4, 4, 2],
+            vec![2, 2, 2, 2],
+            vec![2, 4, 2, 4],
+        ];
+
+        let expected_left = vec![
+            vec![4, 0, 0, 0],
+            vec![8, 2, 0, 0],
+            vec![4, 4, 0, 0],
+            vec![2, 4, 2, 4],
+        ];
+        assert_eq!(shift_board(&v1, Direction::Left), expected_left);
+
+        let expected_right = vec![
+            vec![0, 0, 0, 4],
+            vec![0, 0, 8, 2],
+            vec![0, 0, 4, 4],
+            vec![2, 4, 2, 4],
+        ];
+        assert_eq!(shift_board(&v1, Direction::Right), expected_right);
+
+        let expected_up = vec![
+            vec![4, 4, 2, 4],
+            vec![2, 2, 4, 4],
+            vec![0, 4, 4, 0],
+            vec![0, 0, 0, 0],
+        ];
+        assert_eq!(shift_board(&v1, Direction::Up), expected_up);
+
+        let expected_down = vec![
+            vec![0, 0, 0, 0],
+            vec![0, 4, 2, 0],
+            vec![2, 2, 4, 4],
+            vec![4, 4, 4, 4],
+        ];
+        assert_eq!(shift_board(&v1, Direction::Down), expected_down);
     }
 
     #[test]
