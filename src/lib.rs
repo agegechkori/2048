@@ -106,6 +106,14 @@ mod naive_impl {
         return shifted;
     }
 
+    fn shift_board_up(v: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+        return transpose(&shift_board_left(&transpose(&v.clone())));
+    }
+
+    fn shift_board_down(v: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+        return transpose(&shift_board_right(&transpose(&v.clone())));
+    }
+
     fn reverse_rows(v: &mut Vec<Vec<i32>>) {
         for i in v {
             i.reverse();
@@ -192,6 +200,40 @@ mod naive_impl {
             vec![2, 4, 2, 4],
         ];
         assert_eq!(shift_board_right(&v1), expected);
+    }
+
+    #[test]
+    fn test_shift_board_up() {
+        let v1 = vec![
+            vec![2, 0, 2, 0],
+            vec![0, 4, 4, 2],
+            vec![2, 2, 2, 2],
+            vec![2, 4, 2, 4],
+        ];
+        let expected = vec![
+            vec![4, 4, 2, 4],
+            vec![2, 2, 4, 4],
+            vec![0, 4, 4, 0],
+            vec![0, 0, 0, 0],
+        ];
+        assert_eq!(shift_board_up(&v1), expected);
+    }
+
+    #[test]
+    fn test_shift_board_down() {
+        let v1 = vec![
+            vec![2, 0, 2, 0],
+            vec![0, 4, 4, 2],
+            vec![2, 2, 2, 2],
+            vec![2, 4, 2, 4],
+        ];
+        let expected = vec![
+            vec![0, 0, 0, 0],
+            vec![0, 4, 2, 0],
+            vec![2, 2, 4, 4],
+            vec![4, 4, 4, 4],
+        ];
+        assert_eq!(shift_board_down(&v1), expected);
     }
 
     #[test]
