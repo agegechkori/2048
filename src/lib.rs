@@ -173,7 +173,7 @@ mod naive_impl {
     }
 
     #[test]
-    fn test_combine_paired_cells() {
+    fn test_combine_paired_cells_in_row() {
         let mut v1 = vec![2, 2, 2, 2, 4, 8, 0, 0];
         assert_eq!(
             combine_paired_cells_in_row(&mut v1),
