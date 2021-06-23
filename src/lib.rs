@@ -127,6 +127,16 @@ mod naive_impl {
         return vec;
     }
 
+    fn transpose(v: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+        let mut vec = vec![vec![0; v.len()]; v[0].len()];
+        for i in 0..vec.len() {
+            for j in 0..vec[i].len() {
+                vec[i][j] = v[j][i];
+            }
+        }
+        return vec;
+    }
+
     #[test]
     fn test_shift_row_left() {
         let v1 = vec![2, 0, 0, 0, 2, 0, 4, 0];
@@ -191,5 +201,36 @@ mod naive_impl {
             combine_paired_cells_in_row(&mut v3),
             vec![2, 8, 4, 0, 0, 0, 0, 0]
         );
+    }
+
+    #[test]
+    fn test_transpose_identity_matrix() {
+        let v1 = vec![
+            vec![1, 0, 0, 0],
+            vec![0, 1, 0, 0],
+            vec![0, 0, 1, 0],
+            vec![0, 0, 0, 1],
+        ];
+        assert_eq!(transpose(&v1), v1);
+    }
+
+    #[test]
+    fn test_transpose_rectangular_matrix() {
+        let v1 = vec![
+            vec![1, 0, 2, 5, 1, 1],
+            vec![0, 1, 3, 6, 2, 7],
+            vec![3, 8, 5, 4, 1, 9],
+            vec![0, 1, 0, 3, 0, 7],
+        ];
+        let expected = vec![
+            vec![1, 0, 3, 0],
+            vec![0, 1, 8, 1],
+            vec![2, 3, 5, 0],
+            vec![5, 6, 4, 3],
+            vec![1, 2, 1, 0],
+            vec![1, 7, 9, 7],
+        ];
+        assert_eq!(transpose(&v1), expected);
+        assert_eq!(transpose(&transpose(&v1)), v1);
     }
 }
