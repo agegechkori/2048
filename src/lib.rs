@@ -144,6 +144,20 @@ mod naive_impl {
         return vec;
     }
 
+    fn create_random_tile(v: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+        let mut empty_cells = vec![];
+        let mut vec = vec![];
+        for i in 0..v.len() {
+            for j in 0..v[i].len() {
+                if v[i][j] == 0 {
+                    empty_cells.push((i as i32, j as i32));
+                }
+            }
+        }
+        use rand::prelude::*;
+        return vec;
+    }
+
     #[test]
     fn test_shift_board() {
         let v1 = vec![
