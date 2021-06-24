@@ -49,11 +49,52 @@ mod field {
 }
 
 mod naive_impl {
+    use rand::prelude::*;
+
     enum Direction {
         Left,
         Right,
         Up,
         Down,
+    }
+
+    struct TileOption {
+        value: i32,
+        probability: i8,
+    }
+
+    struct RandomTileGenerator {
+        options: Vec<TileOption>,
+        probability_intervals: Vec<f64>,
+        rng: ThreadRng,
+    }
+
+    impl RandomTileGenerator {
+        fn new(options: Vec<TileOption>, rng: ThreadRng) -> RandomTileGenerator {
+            let mut probability_intervals = vec![];
+            let mut cummulative_probability = 0;
+            for option in &options {
+                cummulative_probability += option.probability;
+                probability_intervals.push(cummulative_probability as f64 / 100 as f64);
+            }
+
+            return RandomTileGenerator {
+                options: options,
+                probability_intervals: probability_intervals,
+                rng: rng,
+            };
+        }
+
+        fn next_tile(&mut self) -> i32 {
+            let p: f64 = self.rng.gen();
+            let mut index = 0;
+            while index < self.probability_intervals.len() && p > self.probability_intervals[index]
+            {
+                index += 1;
+            }
+
+            return self.options[index].value;
+        }
     }
 
     fn shift_board(board: &Vec<Vec<i32>>, direction: Direction) -> Vec<Vec<i32>> {
@@ -144,17 +185,20 @@ mod naive_impl {
         return vec;
     }
 
-    fn create_random_tile(v: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    fn create_random_tile(v: &Vec<Vec<i32>>, generator: &mut RandomTileGenerator) -> Vec<Vec<i32>> {
         let mut empty_cells = vec![];
-        let mut vec = vec![];
+        let mut vec = v.clone();
         for i in 0..v.len() {
             for j in 0..v[i].len() {
                 if v[i][j] == 0 {
-                    empty_cells.push((i as i32, j as i32));
+                    empty_cells.push((i, j));
                 }
             }
         }
-        use rand::prelude::*;
+
+        let mut rng = rand::thread_rng();
+        let index: usize = rng.gen_range(0..empty_cells.len());
+        vec[empty_cells[index].0][empty_cells[index].1] = generator.next_tile();
         return vec;
     }
 
