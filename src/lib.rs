@@ -49,7 +49,18 @@ mod field {
 }
 
 mod naive_impl {
+    use mockall::predicate::*;
+    use mockall::*;
+    use rand::distributions::uniform::SampleRange;
+    use rand::distributions::uniform::SampleUniform;
+    use rand::distributions::DistIter;
+    use rand::distributions::Standard;
     use rand::prelude::*;
+    use rand::rngs::mock::StepRng;
+    use rand::Error;
+    use rand::Fill;
+
+    const TOTAL_PROBABILITY: i8 = 100;
 
     enum Direction {
         Left,
@@ -63,29 +74,27 @@ mod naive_impl {
         probability: i8,
     }
 
-    struct RandomTileGenerator {
+    struct RandomTileGenerator<R: Rng> {
         options: Vec<TileOption>,
         probability_intervals: Vec<f64>,
-        rng: ThreadRng,
+        rng: R,
     }
 
-    impl RandomTileGenerator {
-        fn new(options: Vec<TileOption>, rng: ThreadRng) -> RandomTileGenerator {
-            let mut probability_intervals = vec![];
-            let mut cummulative_probability = 0;
-            for option in &options {
-                cummulative_probability += option.probability;
-                probability_intervals.push(cummulative_probability as f64 / 100 as f64);
-            }
-
-            return RandomTileGenerator {
-                options: options,
-                probability_intervals: probability_intervals,
-                rng: rng,
+    impl<R: Rng> RandomTileGenerator<R> {
+        fn new(options: Vec<TileOption>, rng: R) -> Result<RandomTileGenerator<R>, String> {
+            let probability_intervals =
+                RandomTileGenerator::<R>::create_probability_intervals(&options);
+            return match probability_intervals {
+                Ok(v) => Ok(RandomTileGenerator {
+                    options: options,
+                    probability_intervals: v,
+                    rng: rng,
+                }),
+                Err(err) => Err(err),
             };
         }
 
-        fn next_tile(&mut self) -> i32 {
+        pub fn next_tile(&mut self) -> i32 {
             let p: f64 = self.rng.gen();
             let mut index = 0;
             while index < self.probability_intervals.len() && p > self.probability_intervals[index]
@@ -94,6 +103,23 @@ mod naive_impl {
             }
 
             return self.options[index].value;
+        }
+
+        fn create_probability_intervals(options: &Vec<TileOption>) -> Result<Vec<f64>, String> {
+            let mut probability_intervals = vec![];
+            let mut cummulative_probability = 0;
+            for option in options {
+                cummulative_probability += option.probability;
+                probability_intervals
+                    .push(cummulative_probability as f64 / TOTAL_PROBABILITY as f64);
+            }
+            if cummulative_probability != TOTAL_PROBABILITY {
+                return Err(format!(
+                    "Probabilities should sum up to {}. Actual sum: {}",
+                    TOTAL_PROBABILITY, cummulative_probability
+                ));
+            }
+            return Ok(probability_intervals);
         }
     }
 
@@ -185,7 +211,10 @@ mod naive_impl {
         return vec;
     }
 
-    fn create_random_tile(v: &Vec<Vec<i32>>, generator: &mut RandomTileGenerator) -> Vec<Vec<i32>> {
+    fn create_random_tile<R: Rng>(
+        v: &Vec<Vec<i32>>,
+        generator: &mut RandomTileGenerator<R>,
+    ) -> Vec<Vec<i32>> {
         let mut empty_cells = vec![];
         let mut vec = v.clone();
         for i in 0..v.len() {
@@ -425,5 +454,129 @@ mod naive_impl {
         ];
         assert_eq!(transpose(&v1), expected);
         assert_eq!(transpose(&transpose(&v1)), v1);
+    }
+
+    #[test]
+    fn test_random_tile_generator() {
+        // mock! {
+        //     MyRng {}     // Name of the mock struct, less the "Mock" prefix
+
+        //     impl RngCore for MyRng {
+        //         fn next_u32(&mut self) -> u32;
+        //         fn next_u64(&mut self) -> u64;
+        //         fn fill_bytes(&mut self, dest: &mut [u8]);
+        //         fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error>;
+        //     }
+
+        //     impl<R: RngCore + ?Sized> Rng for MyRng {   // specification of the trait to mock
+        //         fn gen<T>(&mut self) -> T where Standard: Distribution<T>;
+        //         fn gen_range<T, R>(&mut self, range: R) -> T where T: SampleUniform, R: SampleRange<T>;
+        //         fn sample<T, D: Distribution<T>>(&mut self, distr: D) -> T;
+        //         fn sample_iter<T, D>(self, distr: D) -> DistIter<D, Self, T> where D: Distribution<T>, Self: Sized;
+        //         fn fill<T: Fill + ?Sized>(&mut self, dest: &mut T);
+        //         fn try_fill<T: Fill + ?Sized>(&mut self, dest: &mut T);
+        //         fn gen_bool(&mut self, p: f64) -> bool;
+        //         fn gen_ratio(&mut self, numerator: u32, denominator: u32) -> bool;
+        //     }
+        // }
+
+        // RandomTileGenerator::new(
+        //     vec![
+        //         TileOption {
+        //             value: 2,
+        //             probability: 10,
+        //         },
+        //         TileOption {
+        //             value: 4,
+        //             probability: 20,
+        //         },
+        //         TileOption {
+        //             value: 4,
+        //             probability: 30,
+        //         },
+        //         TileOption {
+        //             value: 4,
+        //             probability: 40,
+        //         },
+        //     ],
+        //     StepRng::new(2, 1),
+        // );
+
+        let mut r = StepRng::new(2, 1);
+        let f: [u64; 3] = r.gen();
+        println!("{:?}", f);
+        let ff: f64 = r.gen();
+        println!("{}", ff);
+    }
+
+    #[test]
+    fn test_create_probability_intervals() {
+        let probability_intervals_1 =
+            RandomTileGenerator::<ThreadRng>::create_probability_intervals(&vec![
+                TileOption {
+                    value: 2,
+                    probability: 10,
+                },
+                TileOption {
+                    value: 4,
+                    probability: 20,
+                },
+                TileOption {
+                    value: 4,
+                    probability: 30,
+                },
+                TileOption {
+                    value: 4,
+                    probability: 40,
+                },
+            ]);
+        assert_eq!(probability_intervals_1.unwrap(), vec![0.1, 0.3, 0.6, 1.0]);
+
+        let probability_intervals_2 =
+            RandomTileGenerator::<ThreadRng>::create_probability_intervals(&vec![
+                TileOption {
+                    value: 2,
+                    probability: 30,
+                },
+                TileOption {
+                    value: 4,
+                    probability: 10,
+                },
+                TileOption {
+                    value: 4,
+                    probability: 35,
+                },
+                TileOption {
+                    value: 4,
+                    probability: 25,
+                },
+            ]);
+        assert_eq!(probability_intervals_2.unwrap(), vec![0.3, 0.4, 0.75, 1.0]);
+
+        let invalid_probability_intervals_1 =
+            RandomTileGenerator::<ThreadRng>::create_probability_intervals(&vec![
+                TileOption {
+                    value: 2,
+                    probability: 30,
+                },
+                TileOption {
+                    value: 4,
+                    probability: 80,
+                },
+            ]);
+        assert!(invalid_probability_intervals_1.is_err());
+
+        let invalid_probability_intervals_2 =
+            RandomTileGenerator::<ThreadRng>::create_probability_intervals(&vec![
+                TileOption {
+                    value: 2,
+                    probability: 30,
+                },
+                TileOption {
+                    value: 4,
+                    probability: 60,
+                },
+            ]);
+        assert!(invalid_probability_intervals_2.is_err());
     }
 }
