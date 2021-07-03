@@ -2,11 +2,17 @@ mod random {
     use rand::Rng;
     use std::ops::Range;
 
-    struct SimpleGenerator<R: Rng> {
+    pub struct SimpleGenerator<R: Rng> {
         rng: R,
     }
 
-    trait RandomNumberGenerator {
+    impl<R: Rng> SimpleGenerator<R> {
+        pub fn new(rng: R) -> SimpleGenerator<R> {
+            SimpleGenerator { rng }
+        }
+    }
+
+    pub trait RandomNumberGenerator {
         fn next_float(&mut self) -> f64;
         fn next_in_range(&mut self, range: Range<i32>) -> i32;
     }
@@ -23,20 +29,26 @@ mod random {
 
     #[test]
     fn test_next_float() {
-        let mut srng = SimpleGenerator{rng: rand::thread_rng()};
+        let mut srng = SimpleGenerator {
+            rng: rand::thread_rng(),
+        };
         let random_float = srng.next_float();
         assert!(random_float >= 0.0 && random_float < 1.0);
     }
 
     #[test]
     fn test_next_in_range() {
-        let mut srng = SimpleGenerator{rng: rand::thread_rng()};
+        let mut srng = SimpleGenerator {
+            rng: rand::thread_rng(),
+        };
         let random_int = srng.next_in_range(10..25);
         assert!(random_int >= 10 && random_int < 25);
     }
 }
 
 mod naive_impl {
+    use crate::random::RandomNumberGenerator;
+    use crate::random::SimpleGenerator;
     use mockall::predicate::*;
     use mockall::*;
     use rand::distributions::uniform::SampleRange;
@@ -62,13 +74,13 @@ mod naive_impl {
         probability: i8,
     }
 
-    struct RandomTileGenerator<R: Rng> {
+    struct RandomTileGenerator<R: RandomNumberGenerator> {
         options: Vec<TileOption>,
         probability_intervals: Vec<f64>,
         rng: R,
     }
 
-    impl<R: Rng> RandomTileGenerator<R> {
+    impl<R: RandomNumberGenerator> RandomTileGenerator<R> {
         fn new(options: Vec<TileOption>, rng: R) -> Result<RandomTileGenerator<R>, String> {
             let probability_intervals =
                 RandomTileGenerator::<R>::create_probability_intervals(&options);
@@ -83,7 +95,7 @@ mod naive_impl {
         }
 
         pub fn next_tile(&mut self) -> i32 {
-            let p: f64 = self.rng.gen();
+            let p: f64 = self.rng.next_float();
             return self.next_tile_internal(p);
         }
 
@@ -211,7 +223,7 @@ mod naive_impl {
         return vec;
     }
 
-    fn create_random_tile<R: Rng>(
+    fn create_random_tile<R: RandomNumberGenerator>(
         v: &Vec<Vec<i32>>,
         generator: &mut RandomTileGenerator<R>,
     ) -> Vec<Vec<i32>> {
@@ -481,7 +493,7 @@ mod naive_impl {
                     probability: 40,
                 },
             ],
-            rand::thread_rng(),
+            SimpleGenerator::new(rand::thread_rng()),
         )
         .unwrap();
 
@@ -494,7 +506,7 @@ mod naive_impl {
     #[test]
     fn test_create_probability_intervals() {
         let probability_intervals_1 =
-            RandomTileGenerator::<ThreadRng>::create_probability_intervals(&vec![
+            RandomTileGenerator::<SimpleGenerator<ThreadRng>>::create_probability_intervals(&vec![
                 TileOption {
                     value: 2,
                     probability: 10,
@@ -515,7 +527,7 @@ mod naive_impl {
         assert_eq!(probability_intervals_1.unwrap(), vec![0.1, 0.3, 0.6, 1.0]);
 
         let probability_intervals_2 =
-            RandomTileGenerator::<ThreadRng>::create_probability_intervals(&vec![
+            RandomTileGenerator::<SimpleGenerator<ThreadRng>>::create_probability_intervals(&vec![
                 TileOption {
                     value: 2,
                     probability: 30,
@@ -536,7 +548,7 @@ mod naive_impl {
         assert_eq!(probability_intervals_2.unwrap(), vec![0.3, 0.4, 0.75, 1.0]);
 
         let invalid_probability_intervals_1 =
-            RandomTileGenerator::<ThreadRng>::create_probability_intervals(&vec![
+            RandomTileGenerator::<SimpleGenerator<ThreadRng>>::create_probability_intervals(&vec![
                 TileOption {
                     value: 2,
                     probability: 30,
@@ -549,7 +561,7 @@ mod naive_impl {
         assert!(invalid_probability_intervals_1.is_err());
 
         let invalid_probability_intervals_2 =
-            RandomTileGenerator::<ThreadRng>::create_probability_intervals(&vec![
+            RandomTileGenerator::<SimpleGenerator<ThreadRng>>::create_probability_intervals(&vec![
                 TileOption {
                     value: 2,
                     probability: 30,
@@ -598,7 +610,7 @@ mod naive_impl {
                     probability: 40,
                 },
             ],
-            rand::thread_rng(),
+            SimpleGenerator::new(rand::thread_rng()),
         )
         .unwrap();
 
