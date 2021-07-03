@@ -1,3 +1,41 @@
+mod random {
+    use rand::Rng;
+    use std::ops::Range;
+
+    struct SimpleGenerator<R: Rng> {
+        rng: R,
+    }
+
+    trait RandomNumberGenerator {
+        fn next_float(&mut self) -> f64;
+        fn next_in_range(&mut self, range: Range<i32>) -> i32;
+    }
+
+    impl<R: Rng> RandomNumberGenerator for SimpleGenerator<R> {
+        fn next_float(&mut self) -> f64 {
+            return self.rng.gen();
+        }
+
+        fn next_in_range(&mut self, range: Range<i32>) -> i32 {
+            return self.rng.gen_range(range);
+        }
+    }
+
+    #[test]
+    fn test_next_float() {
+        let mut srng = SimpleGenerator{rng: rand::thread_rng()};
+        let random_float = srng.next_float();
+        assert!(random_float >= 0.0 && random_float < 1.0);
+    }
+
+    #[test]
+    fn test_next_in_range() {
+        let mut srng = SimpleGenerator{rng: rand::thread_rng()};
+        let random_int = srng.next_in_range(10..25);
+        assert!(random_int >= 10 && random_int < 25);
+    }
+}
+
 mod naive_impl {
     use mockall::predicate::*;
     use mockall::*;
@@ -173,7 +211,10 @@ mod naive_impl {
         return vec;
     }
 
-    fn create_random_tile<R: Rng>(v: &Vec<Vec<i32>>, generator: &mut RandomTileGenerator<R>) -> Vec<Vec<i32>> {
+    fn create_random_tile<R: Rng>(
+        v: &Vec<Vec<i32>>,
+        generator: &mut RandomTileGenerator<R>,
+    ) -> Vec<Vec<i32>> {
         let empty_cells = select_empty_cells(&v);
         let mut vec = v.clone();
         let mut rng = rand::thread_rng();
