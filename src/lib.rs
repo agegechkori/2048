@@ -27,6 +27,10 @@ mod random {
         }
     }
 
+    pub fn create_simple_generator() -> impl RandomNumberGenerator {
+        SimpleGenerator::new(rand::thread_rng())
+    }
+
     #[test]
     fn test_next_float() {
         let mut srng = SimpleGenerator {
@@ -47,18 +51,11 @@ mod random {
 }
 
 mod naive_impl {
+    use crate::random::create_simple_generator;
     use crate::random::RandomNumberGenerator;
     use crate::random::SimpleGenerator;
     use mockall::predicate::*;
     use mockall::*;
-    use rand::distributions::uniform::SampleRange;
-    use rand::distributions::uniform::SampleUniform;
-    use rand::distributions::DistIter;
-    use rand::distributions::Standard;
-    use rand::prelude::*;
-    use rand::rngs::mock::StepRng;
-    use rand::Error;
-    use rand::Fill;
 
     const TOTAL_PROBABILITY: i8 = 100;
 
@@ -82,8 +79,7 @@ mod naive_impl {
 
     impl<R: RandomNumberGenerator> RandomTileGenerator<R> {
         fn new(options: Vec<TileOption>, rng: R) -> Result<RandomTileGenerator<R>, String> {
-            let probability_intervals =
-                RandomTileGenerator::<R>::create_probability_intervals(&options);
+            let probability_intervals = create_probability_intervals(&options);
             return match probability_intervals {
                 Ok(v) => Ok(RandomTileGenerator {
                     options: options,
@@ -109,23 +105,22 @@ mod naive_impl {
 
             return self.options[index].value;
         }
+    }
 
-        fn create_probability_intervals(options: &Vec<TileOption>) -> Result<Vec<f64>, String> {
-            let mut probability_intervals = vec![];
-            let mut cummulative_probability = 0;
-            for option in options {
-                cummulative_probability += option.probability;
-                probability_intervals
-                    .push(cummulative_probability as f64 / TOTAL_PROBABILITY as f64);
-            }
-            if cummulative_probability != TOTAL_PROBABILITY {
-                return Err(format!(
-                    "Probabilities should sum up to {}. Actual sum: {}",
-                    TOTAL_PROBABILITY, cummulative_probability
-                ));
-            }
-            return Ok(probability_intervals);
+    fn create_probability_intervals(options: &Vec<TileOption>) -> Result<Vec<f64>, String> {
+        let mut probability_intervals = vec![];
+        let mut cummulative_probability = 0;
+        for option in options {
+            cummulative_probability += option.probability;
+            probability_intervals.push(cummulative_probability as f64 / TOTAL_PROBABILITY as f64);
         }
+        if cummulative_probability != TOTAL_PROBABILITY {
+            return Err(format!(
+                "Probabilities should sum up to {}. Actual sum: {}",
+                TOTAL_PROBABILITY, cummulative_probability
+            ));
+        }
+        return Ok(probability_intervals);
     }
 
     fn shift_board(board: &Vec<Vec<i32>>, direction: Direction) -> (Vec<Vec<i32>>, i32) {
@@ -229,8 +224,8 @@ mod naive_impl {
     ) -> Vec<Vec<i32>> {
         let empty_cells = select_empty_cells(&v);
         let mut vec = v.clone();
-        let mut rng = rand::thread_rng();
-        let (i, j) = empty_cells[rng.gen_range(0..empty_cells.len())];
+        let mut rng = create_simple_generator();
+        let (i, j) = empty_cells[rng.next_in_range(0..empty_cells.len() as i32) as usize];
         vec[i][j] = generator.next_tile();
         return vec;
     }
@@ -493,7 +488,7 @@ mod naive_impl {
                     probability: 40,
                 },
             ],
-            SimpleGenerator::new(rand::thread_rng()),
+            create_simple_generator(),
         )
         .unwrap();
 
@@ -505,72 +500,68 @@ mod naive_impl {
 
     #[test]
     fn test_create_probability_intervals() {
-        let probability_intervals_1 =
-            RandomTileGenerator::<SimpleGenerator<ThreadRng>>::create_probability_intervals(&vec![
-                TileOption {
-                    value: 2,
-                    probability: 10,
-                },
-                TileOption {
-                    value: 4,
-                    probability: 20,
-                },
-                TileOption {
-                    value: 8,
-                    probability: 30,
-                },
-                TileOption {
-                    value: 16,
-                    probability: 40,
-                },
-            ]);
+        let probability_intervals_1 = create_probability_intervals(&vec![
+            TileOption {
+                value: 2,
+                probability: 10,
+            },
+            TileOption {
+                value: 4,
+                probability: 20,
+            },
+            TileOption {
+                value: 8,
+                probability: 30,
+            },
+            TileOption {
+                value: 16,
+                probability: 40,
+            },
+        ]);
         assert_eq!(probability_intervals_1.unwrap(), vec![0.1, 0.3, 0.6, 1.0]);
 
-        let probability_intervals_2 =
-            RandomTileGenerator::<SimpleGenerator<ThreadRng>>::create_probability_intervals(&vec![
-                TileOption {
-                    value: 2,
-                    probability: 30,
-                },
-                TileOption {
-                    value: 4,
-                    probability: 10,
-                },
-                TileOption {
-                    value: 8,
-                    probability: 35,
-                },
-                TileOption {
-                    value: 16,
-                    probability: 25,
-                },
-            ]);
+        let probability_intervals_2 = create_probability_intervals(&vec![
+            TileOption {
+                value: 2,
+                probability: 30,
+            },
+            TileOption {
+                value: 4,
+                probability: 10,
+            },
+            TileOption {
+                value: 8,
+                probability: 35,
+            },
+            TileOption {
+                value: 16,
+                probability: 25,
+            },
+        ]);
         assert_eq!(probability_intervals_2.unwrap(), vec![0.3, 0.4, 0.75, 1.0]);
 
-        let invalid_probability_intervals_1 =
-            RandomTileGenerator::<SimpleGenerator<ThreadRng>>::create_probability_intervals(&vec![
-                TileOption {
-                    value: 2,
-                    probability: 30,
-                },
-                TileOption {
-                    value: 4,
-                    probability: 80,
-                },
-            ]);
+        let invalid_probability_intervals_1 = create_probability_intervals(&vec![
+            TileOption {
+                value: 2,
+                probability: 30,
+            },
+            TileOption {
+                value: 4,
+                probability: 80,
+            },
+        ]);
         assert!(invalid_probability_intervals_1.is_err());
 
-        let invalid_probability_intervals_2 =
-            RandomTileGenerator::<SimpleGenerator<ThreadRng>>::create_probability_intervals(&vec![
-                TileOption {
-                    value: 2,
-                    probability: 30,
-                },
-                TileOption {
-                    value: 4,
-                    probability: 60,
-                },
-            ]);
+        let invalid_probability_intervals_2 = create_probability_intervals(&vec![
+            TileOption {
+                value: 2,
+                probability: 30,
+            },
+            TileOption {
+                value: 4,
+                probability: 60,
+            },
+        ]);
         assert!(invalid_probability_intervals_2.is_err());
     }
 
@@ -610,7 +601,7 @@ mod naive_impl {
                     probability: 40,
                 },
             ],
-            SimpleGenerator::new(rand::thread_rng()),
+            create_simple_generator(),
         )
         .unwrap();
 
