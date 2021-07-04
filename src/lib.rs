@@ -2,7 +2,7 @@ mod random {
     use rand::Rng;
     use std::ops::Range;
 
-    pub struct SimpleGenerator<R: Rng> {
+    struct SimpleGenerator<R: Rng> {
         rng: R,
     }
 
@@ -53,7 +53,6 @@ mod random {
 mod naive_impl {
     use crate::random::create_simple_generator;
     use crate::random::RandomNumberGenerator;
-    use crate::random::SimpleGenerator;
     use mockall::predicate::*;
     use mockall::*;
 
