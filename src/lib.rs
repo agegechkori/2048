@@ -6,12 +6,6 @@ mod random {
         rng: R,
     }
 
-    impl<R: Rng> SimpleGenerator<R> {
-        pub fn new(rng: R) -> SimpleGenerator<R> {
-            SimpleGenerator { rng }
-        }
-    }
-
     pub trait RandomNumberGenerator {
         fn next_float(&mut self) -> f64;
         fn next_in_range(&mut self, range: Range<i32>) -> i32;
@@ -28,7 +22,7 @@ mod random {
     }
 
     pub fn create_simple_generator() -> impl RandomNumberGenerator {
-        SimpleGenerator::new(rand::thread_rng())
+        SimpleGenerator { rng: rand::thread_rng() }
     }
 
     #[test]
