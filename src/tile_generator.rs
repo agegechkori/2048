@@ -7,17 +7,17 @@ struct TileOption {
     probability: i8,
 }
 
-pub struct RandomTileGenerator<R: RandomNumberGenerator> {
+pub struct TileGenerator<R: RandomNumberGenerator> {
     options: Vec<TileOption>,
     probability_intervals: Vec<f64>,
     rng: R,
 }
 
-impl<R: RandomNumberGenerator> RandomTileGenerator<R> {
-    fn new(options: Vec<TileOption>, rng: R) -> Result<RandomTileGenerator<R>, String> {
+impl<R: RandomNumberGenerator> TileGenerator<R> {
+    fn new(options: Vec<TileOption>, rng: R) -> Result<TileGenerator<R>, String> {
         let probability_intervals = create_probability_intervals(&options);
         return match probability_intervals {
-            Ok(v) => Ok(RandomTileGenerator {
+            Ok(v) => Ok(TileGenerator {
                 options: options,
                 probability_intervals: v,
                 rng: rng,
@@ -71,7 +71,7 @@ fn create_probability_intervals(options: &Vec<TileOption>) -> Result<Vec<f64>, S
 
 #[test]
 fn test_random_tile_generator() {
-    let random_tile_generator = RandomTileGenerator::new(
+    let random_tile_generator = TileGenerator::new(
         vec![
             TileOption {
                 value: 2,

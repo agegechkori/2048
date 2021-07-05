@@ -1,4 +1,4 @@
-use crate::tile_generator::RandomTileGenerator;
+use crate::tile_generator::TileGenerator;
 use crate::random::RandomNumberGenerator;
 use mockall::predicate::*;
 use mockall::*;
@@ -107,7 +107,7 @@ fn transpose(v: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
 
 fn create_random_tile<R: RandomNumberGenerator>(
     v: &Vec<Vec<i32>>,
-    generator: &mut RandomTileGenerator<R>,
+    generator: &mut TileGenerator<R>,
 ) -> Vec<Vec<i32>> {
     let empty_cells = select_empty_cells(&v);
     let mut vec = v.clone();
@@ -371,7 +371,7 @@ fn test_select_empty_cells() {
 // TODO: reimplement test with mocks
 // #[test]
 // fn test_create_random_tile() {
-//     let mut random_tile_generator = RandomTileGenerator::new(
+//     let mut random_tile_generator = TileGenerator::new(
 //         vec![
 //             TileOption {
 //                 value: 2,
