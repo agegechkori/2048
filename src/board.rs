@@ -1,5 +1,4 @@
 use crate::tile_generator::RandomTileGenerator;
-use crate::random::create_simple_generator;
 use crate::random::RandomNumberGenerator;
 use mockall::predicate::*;
 use mockall::*;
