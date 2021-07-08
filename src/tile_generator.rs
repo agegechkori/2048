@@ -7,6 +7,11 @@ struct TileOption {
     probability: i8,
 }
 
+pub trait AbstractTileGenerator {
+    fn generate_tile(&mut self, empty_cells: &Vec<(usize, usize)>) -> (usize, usize, i32);
+    fn next_tile(&mut self) -> i32;
+}
+
 pub struct TileGenerator<R: RandomNumberGenerator> {
     options: Vec<TileOption>,
     probability_intervals: Vec<f64>,
@@ -37,7 +42,7 @@ impl<R: RandomNumberGenerator> TileGenerator<R> {
         return self.next_tile_internal(p);
     }
 
-    pub fn select_empty_cell(&mut self, empty_cells: &Vec<(usize, usize)>) -> (usize, usize) {
+    fn select_empty_cell(&mut self, empty_cells: &Vec<(usize, usize)>) -> (usize, usize) {
         return empty_cells[self.rng.next_in_range(0..empty_cells.len() as i32) as usize];
     }
 
