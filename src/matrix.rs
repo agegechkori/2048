@@ -1,5 +1,5 @@
-use std::ops::IndexMut;
 use std::ops::Index;
+use std::ops::IndexMut;
 
 struct Matrix<T> {
     data: Vec<T>,
@@ -17,19 +17,19 @@ impl<T> Matrix<T> {
                 data.push(col);
             }
         }
-        return Matrix { data, rows, cols };
+        Matrix { data, rows, cols }
     }
 
     fn translate(&self, row: usize, col: usize) -> usize {
-        return row * self.cols + col;
-    }  
+        row * self.cols + col
+    }
 }
 
 impl<T> Index<usize> for Matrix<T> {
     type Output = [T];
 
     fn index(&self, index: usize) -> &Self::Output {
-        return &self.data[self.translate(index, 0)..self.translate(index, self.cols)];
+        &self.data[self.translate(index, 0)..self.translate(index, self.cols)]
     }
 }
 
@@ -37,7 +37,7 @@ impl<T> IndexMut<usize> for Matrix<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         let start = self.translate(index, 0);
         let end = self.translate(index, self.cols);
-        return &mut self.data[start..end];
+        &mut self.data[start..end]
     }
 }
 
@@ -107,4 +107,3 @@ fn test_index_mut() {
     assert_eq!(m[3][1], 60);
     assert_eq!(m[3][2], 40);
 }
-

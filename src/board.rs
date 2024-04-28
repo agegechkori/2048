@@ -1,7 +1,5 @@
-use crate::tile_generator::TileGenerator;
 use crate::random::RandomNumberGenerator;
-use mockall::predicate::*;
-use mockall::*;
+use crate::tile_generator::TileGenerator;
 
 enum Direction {
     Left,
@@ -10,16 +8,16 @@ enum Direction {
     Down,
 }
 
-fn shift_board(board: &Vec<Vec<i32>>, direction: Direction) -> (Vec<Vec<i32>>, i32) {
-    return match direction {
-        Direction::Left => shift_board_left(&board),
-        Direction::Right => shift_board_right(&board),
-        Direction::Up => shift_board_up(&board),
-        Direction::Down => shift_board_down(&board),
-    };
+fn shift_board(board: &[Vec<i32>], direction: Direction) -> (Vec<Vec<i32>>, i32) {
+    match direction {
+        Direction::Left => shift_board_left(board),
+        Direction::Right => shift_board_right(board),
+        Direction::Up => shift_board_up(board),
+        Direction::Down => shift_board_down(board),
+    }
 }
 
-fn shift_board_left(v: &Vec<Vec<i32>>) -> (Vec<Vec<i32>>, i32) {
+fn shift_board_left(v: &[Vec<i32>]) -> (Vec<Vec<i32>>, i32) {
     let mut vec = <Vec<Vec<i32>>>::with_capacity(v.len());
     let mut score = 0;
     for i in v {
@@ -27,48 +25,50 @@ fn shift_board_left(v: &Vec<Vec<i32>>) -> (Vec<Vec<i32>>, i32) {
         vec.push(row);
         score += row_score;
     }
-    return (vec, score);
+    (vec, score)
 }
 
-fn shift_board_right(v: &Vec<Vec<i32>>) -> (Vec<Vec<i32>>, i32) {
-    let mut vec = v.clone();
+fn shift_board_right(v: &[Vec<i32>]) -> (Vec<Vec<i32>>, i32) {
+    let mut vec = Vec::new();
+    vec.extend_from_slice(v);
     reverse_rows(&mut vec);
 
     let (mut shifted, score) = shift_board_left(&vec);
     reverse_rows(&mut shifted);
-    return (shifted, score);
+    (shifted, score)
 }
 
-fn shift_board_up(v: &Vec<Vec<i32>>) -> (Vec<Vec<i32>>, i32) {
-    let (new_board, score) = shift_board_left(&transpose(&v.clone()));
-    return (transpose(&new_board), score);
+fn shift_board_up(v: &[Vec<i32>]) -> (Vec<Vec<i32>>, i32) {
+    let (new_board, score) = shift_board_left(&transpose(v));
+    (transpose(&new_board), score)
 }
 
-fn shift_board_down(v: &Vec<Vec<i32>>) -> (Vec<Vec<i32>>, i32) {
-    let (new_board, score) = shift_board_right(&transpose(&v.clone()));
-    return (transpose(&new_board), score);
+fn shift_board_down(v: &[Vec<i32>]) -> (Vec<Vec<i32>>, i32) {
+    let (new_board, score) = shift_board_right(&transpose(v));
+    (transpose(&new_board), score)
 }
 
-fn reverse_rows(v: &mut Vec<Vec<i32>>) {
+fn reverse_rows(v: &mut [Vec<i32>]) {
     for i in v {
         i.reverse();
     }
 }
 
-fn shift_row_left(v: &Vec<i32>) -> (Vec<i32>, i32) {
+fn shift_row_left(v: &[i32]) -> (Vec<i32>, i32) {
     let mut vec = compactify_row(v);
-    return combine_paired_cells_in_row(&mut vec);
+    combine_paired_cells_in_row(&mut vec)
 }
 
-fn shift_row_right(v: &Vec<i32>) -> (Vec<i32>, i32) {
-    let mut vv = v.clone();
+fn shift_row_right(v: &[i32]) -> (Vec<i32>, i32) {
+    let mut vv = Vec::new();
+    vv.extend_from_slice(v);
     vv.reverse();
     let (mut vec, score) = shift_row_left(&vv);
     vec.reverse();
-    return (vec, score);
+    (vec, score)
 }
 
-fn combine_paired_cells_in_row(v: &mut Vec<i32>) -> (Vec<i32>, i32) {
+fn combine_paired_cells_in_row(v: &mut [i32]) -> (Vec<i32>, i32) {
     let mut i = 0;
     let mut score = 0;
     while i < v.len() - 1 && v[i] != 0 {
@@ -81,10 +81,10 @@ fn combine_paired_cells_in_row(v: &mut Vec<i32>) -> (Vec<i32>, i32) {
             i += 1
         }
     }
-    return (compactify_row(v), score);
+    (compactify_row(v), score)
 }
 
-fn compactify_row(v: &Vec<i32>) -> Vec<i32> {
+fn compactify_row(v: &[i32]) -> Vec<i32> {
     let mut vec = Vec::new();
     for i in v {
         if *i != 0 {
@@ -92,40 +92,41 @@ fn compactify_row(v: &Vec<i32>) -> Vec<i32> {
         }
     }
     vec.resize(v.len(), 0);
-    return vec;
+    vec
 }
 
-fn transpose(v: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+fn transpose(v: &[Vec<i32>]) -> Vec<Vec<i32>> {
     let mut vec = vec![vec![0; v.len()]; v[0].len()];
-    for i in 0..vec.len() {
-        for j in 0..vec[i].len() {
-            vec[i][j] = v[j][i];
+    for (i, row) in vec.iter_mut().enumerate() {
+        for (j, col) in row.iter_mut().enumerate() {
+            *col = v[j][i];
         }
     }
-    return vec;
+    vec
 }
 
 fn create_random_tile<R: RandomNumberGenerator>(
-    v: &Vec<Vec<i32>>,
+    v: &[Vec<i32>],
     generator: &mut TileGenerator<R>,
 ) -> Vec<Vec<i32>> {
-    let empty_cells = select_empty_cells(&v);
-    let mut vec = v.clone();
+    let empty_cells = select_empty_cells(v);
+    let mut vec = Vec::new();
+    vec.extend_from_slice(v);
     let (i, j, tile) = generator.generate_tile(&empty_cells);
     vec[i][j] = tile;
-    return vec;
+    vec
 }
 
-fn select_empty_cells(v: &Vec<Vec<i32>>) -> Vec<(usize, usize)> {
+fn select_empty_cells(v: &[Vec<i32>]) -> Vec<(usize, usize)> {
     let mut empty_cells = vec![];
-    for i in 0..v.len() {
-        for j in 0..v[i].len() {
-            if v[i][j] == 0 {
+    for (i, row) in v.iter().enumerate() {
+        for (j, col) in row.iter().enumerate() {
+            if *col == 0 {
                 empty_cells.push((i, j));
             }
         }
     }
-    return empty_cells;
+    empty_cells
 }
 
 #[test]

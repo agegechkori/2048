@@ -12,11 +12,11 @@ pub trait RandomNumberGenerator {
 
 impl<R: Rng> RandomNumberGenerator for SimpleGenerator<R> {
     fn next_float(&mut self) -> f64 {
-        return self.rng.gen();
+        self.rng.gen()
     }
 
     fn next_in_range(&mut self, range: Range<i32>) -> i32 {
-        return self.rng.gen_range(range);
+        self.rng.gen_range(range)
     }
 }
 
@@ -32,7 +32,7 @@ fn test_next_float() {
         rng: rand::thread_rng(),
     };
     let random_float = srng.next_float();
-    assert!(random_float >= 0.0 && random_float < 1.0);
+    assert!((0.0..1.0).contains(&random_float));
 }
 
 #[test]
@@ -41,5 +41,5 @@ fn test_next_in_range() {
         rng: rand::thread_rng(),
     };
     let random_int = srng.next_in_range(10..25);
-    assert!(random_int >= 10 && random_int < 25);
+    assert!((10..25).contains(&random_int));
 }
