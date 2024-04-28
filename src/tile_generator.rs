@@ -16,29 +16,29 @@ pub struct TileGenerator<R: RandomNumberGenerator> {
 impl<R: RandomNumberGenerator> TileGenerator<R> {
     fn new(options: Vec<TileOption>, rng: R) -> Result<TileGenerator<R>, String> {
         let probability_intervals = create_probability_intervals(&options);
-        return match probability_intervals {
+        match probability_intervals {
             Ok(v) => Ok(TileGenerator {
-                options: options,
+                options,
                 probability_intervals: v,
-                rng: rng,
+                rng,
             }),
             Err(err) => Err(err),
-        };
+        }
     }
 
-    pub fn generate_tile(&mut self, empty_cells: &Vec<(usize, usize)>) -> (usize, usize, i32) {
+    pub fn generate_tile(&mut self, empty_cells: &[(usize, usize)]) -> (usize, usize, i32) {
         let (i, j) = self.select_empty_cell(empty_cells);
         let tile = self.next_tile();
-        return (i, j, tile);
+        (i, j, tile)
     }
 
     pub fn next_tile(&mut self) -> i32 {
         let p: f64 = self.rng.next_float();
-        return self.next_tile_internal(p);
+        self.next_tile_internal(p)
     }
 
-    fn select_empty_cell(&mut self, empty_cells: &Vec<(usize, usize)>) -> (usize, usize) {
-        return empty_cells[self.rng.next_in_range(0..empty_cells.len() as i32) as usize];
+    fn select_empty_cell(&mut self, empty_cells: &[(usize, usize)]) -> (usize, usize) {
+        empty_cells[self.rng.next_in_range(0..empty_cells.len() as i32) as usize]
     }
 
     fn next_tile_internal(&self, random_number: f64) -> i32 {
@@ -49,7 +49,7 @@ impl<R: RandomNumberGenerator> TileGenerator<R> {
             index += 1;
         }
 
-        return self.options[index].value;
+        self.options[index].value
     }
 }
 
@@ -66,7 +66,7 @@ fn create_probability_intervals(options: &Vec<TileOption>) -> Result<Vec<f64>, S
             TOTAL_PROBABILITY, cummulative_probability
         ));
     }
-    return Ok(probability_intervals);
+    Ok(probability_intervals)
 }
 
 #[test]
@@ -171,3 +171,4 @@ fn test_create_probability_intervals() {
 fn test_generate_tile() {
     // TODO implement test with mocks
 }
+
