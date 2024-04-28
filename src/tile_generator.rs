@@ -42,14 +42,12 @@ impl<R: RandomNumberGenerator> TileGenerator<R> {
     }
 
     fn next_tile_internal(&self, random_number: f64) -> i32 {
-        let mut index = 0;
-        while index < self.probability_intervals.len()
-            && random_number > self.probability_intervals[index]
-        {
-            index += 1;
+        for (index, interval) in self.probability_intervals.iter().enumerate() {
+            if random_number <= *interval {
+                return self.options[index].value;
+            }
         }
-
-        self.options[index].value
+        self.options[0].value
     }
 }
 
